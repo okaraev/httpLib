@@ -2,6 +2,8 @@
 
 package devops.utils
 
+import groovy.json.*
+
 import org.apache.http.client.methods.*
 import org.apache.http.entity.*
 import org.apache.http.impl.client.*
