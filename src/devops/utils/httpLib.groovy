@@ -2,6 +2,10 @@
 
 package devops.utils
 
+import org.apache.http.client.methods.*
+import org.apache.http.entity.*
+import org.apache.http.impl.client.*
+
 class httpLib {
     httpLib(){}
 
