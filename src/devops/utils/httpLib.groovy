@@ -31,7 +31,7 @@ class httpLib implements Serializable {
 
     def checkThreshold(local,String node){
         def shouldRemove = false
-        for(z = 0; z < local.size(); z++){
+        for(def z = 0; z < local.size(); z++){
             if(local[z].Node == node){
                 if(local[z].Tries == 3){
                     shouldRemove = true
