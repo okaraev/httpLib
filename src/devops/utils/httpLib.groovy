@@ -24,7 +24,7 @@ class httpLib implements Serializable {
             println("Got an exception: ${e}")
         }
         if(!exceptionwhilereading){
-            localArray = readJSON text: localJson
+            localArray = steps.readJSON text: localJson
         }
         return localArray
     }
