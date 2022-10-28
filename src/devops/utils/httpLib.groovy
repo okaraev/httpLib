@@ -10,18 +10,25 @@ import org.apache.http.impl.client.*
 
 class httpLib implements Serializable {
     def steps
-    httpLib(steps) {this.steps = steps}
+    def localFilePath
+    def jenkinsUserToken
+    def jenkinsServerAddress
+    httpLib(steps,localFile,userToken,serverAddress) {
+        this.steps = steps
+        this.localFilePath = localFile
+        this.jenkinsUserToken = userToken
+        this.jenkinsServerAddress = serverAddress
+    }
 
-    def getLocalNodes(String filePath){
+    def getLocalNodes(){
         def exceptionwhilereading = false
         def String localJson
         def localArray
         try{
-            localJson = steps.readFile(file: filePath, encoding: "utf8")
+            localJson = steps.readFile(file: this.localFilePath, encoding: "utf8")
         }catch(e){
             localArray = [["Node":"builtin", "Tries":0]]
             exceptionwhilereading = true
-            println("Got an exception: ${e}")
         }
         if(!exceptionwhilereading){
             localArray = steps.readJSON text: localJson
@@ -42,7 +49,7 @@ class httpLib implements Serializable {
         return shouldRemove
     }
 
-    def saveLocal(local,remote,String filePath){
+    def saveLocal(local,remote){
         def list = []
         for(def a = 0; a < local.size(); a++){
             for(def c = 0; c < remote.computer.size(); c++){
@@ -81,19 +88,19 @@ class httpLib implements Serializable {
             }
         }
         def text = JsonOutput.toJson(list).toString()
-        steps.writeFile(text: text, file: filePath, encoding: "utf8")
+        steps.writeFile(text: text, file: this.localFilePath, encoding: "utf8")
     }
 
-    def getRemoteNodes(String serverAddress,String userNameToken){
-        def url = "${serverAddress}/computer/api/json?pretty=true"
-        def basicAuth = 'Basic '+"${userNameToken}".getBytes('iso-8859-1').encodeBase64()
+    def getRemoteNodes(){
+        def url = "${this.jenkinsServerAddress}/computer/api/json?pretty=true"
+        def basicAuth = 'Basic '+"${this.jenkinsUserToken}".getBytes('iso-8859-1').encodeBase64()
         def jsonResponse = steps.httpRequest(customHeaders: [[name: 'Authorization', value: basicAuth]], url: url, quiet: true)
         
         def resultMap = steps.readJSON text: jsonResponse.content
         return resultMap
     }
 
-    def getRemovableNodes(remoteNodes,localNodes,filePath){
+    def getRemovableNodes(remoteNodes,localNodes){
         def array = []
         for(def i=0; i < remoteNodes.computer.size(); i++){
             if(remoteNodes.computer[i].offline && !remoteNodes.computer[i].temporarilyOffline){
@@ -109,12 +116,22 @@ class httpLib implements Serializable {
         return array
     }
 
-    def removeNode(String serverAddress, String userNameToken, String node){
-        def url = "${serverAddress}/computer/${node}/doDelete"
-        def basicAuth = 'Basic '+"${userNameToken}".getBytes('iso-8859-1').encodeBase64()
+    def removeNode(String node){
+        def url = "${this.jenkinsServerAddress}/computer/${node}/doDelete"
+        def basicAuth = 'Basic '+"${this.jenkinsUserToken}".getBytes('iso-8859-1').encodeBase64()
         def jsonResponse = steps.httpRequest(customHeaders: [[name: 'Authorization', value: basicAuth]], url: url, quiet: true, httpMode: 'POST')
         if(jsonResponse.status != 302){
             throw("Cannot remove node: ${jsonResponse.content}")
         }
+    }
+
+    def removeOfflineNodes(){
+        def localNodes = this.getLocalNodes()
+        def remoteNodes = this.getRemoteNodes()
+        def nodes = this.getRemovableNodes(remoteNodes,localNodes)
+        for(def b=0; b < nodes.size(); b++){
+            this.removeNode(nodes[b].Name)
+        }
+        this.saveLocal(localNodes,remoteNodes)
     }
 }
