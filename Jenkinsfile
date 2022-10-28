@@ -1,4 +1,5 @@
 @Library('utils') import devops.utils.httpLib
+def String localFilePath = "./nodes.json"
 
 def util = new httpLib(this)
 
