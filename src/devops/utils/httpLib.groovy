@@ -8,11 +8,12 @@ import org.apache.http.client.methods.*
 import org.apache.http.entity.*
 import org.apache.http.impl.client.*
 
-class httpLib {
-    httpLib(){}
+class httpLib implements Serializable {
+    def steps
+    httpLib(steps) {this.steps = steps}
 
     def getLocalNodes(String filePath){
-        exceptionwhilereading = false
+        def exceptionwhilereading = false
         def String localJson
         def localArray
         try{
@@ -29,7 +30,7 @@ class httpLib {
     }
 
     def checkThreshold(local,String node){
-        shouldRemove = false
+        def shouldRemove = false
         for(z = 0; z < local.size(); z++){
             if(local[z].Node == node){
                 if(local[z].Tries == 3){
@@ -42,13 +43,12 @@ class httpLib {
     }
 
     def saveLocal(local,remote,String filePath){
-        list = []
-        for(a = 0; a < local.size(); a++){
-            for(c = 0; c < remote.computer.size(); c++){
-                remoteComp = remote.computer[c]
+        def list = []
+        for(def a = 0; a < local.size(); a++){
+            for(def c = 0; c < remote.computer.size(); c++){
+                def remoteComp = remote.computer[c]
                 if(remoteComp.offline && !remoteComp.temporarilyOffline){
-                    node = remoteComp.displayName
-                    if(local[a].Node == node){
+                    if(local[a].Node == remoteComp.displayName){
                         if(local[a].Tries != 3){
                             element = [:]
                             element.Node = local[a].Node
@@ -60,13 +60,12 @@ class httpLib {
                 }
             }
         }
-        for(cd = 0; cd < remote.computer.size(); cd++){
-            remoteComp = remote.computer[cd]
-            remoteFound = false
-            for(ab = 0; ab < local.size(); ab++){
+        for(def cd = 0; cd < remote.computer.size(); cd++){
+            def remoteComp = remote.computer[cd]
+            def remoteFound = false
+            for(def ab = 0; ab < local.size(); ab++){
                 if(remoteComp.offline && !remoteComp.temporarilyOffline){
-                    node = remoteComp.displayName
-                    if(local[ab].Node == node){
+                    if(local[ab].Node == remoteComp.displayName){
                         remoteFound = true
                         break
                     }
@@ -74,7 +73,7 @@ class httpLib {
             }
             if(!remoteFound){
                 if(remoteComp.offline && !remoteComp.temporarilyOffline){
-                    map = [:]
+                    def map = [:]
                     map.Node = remoteComp.displayName
                     map.Tries = 1
                     list.add(map)
@@ -96,19 +95,18 @@ class httpLib {
     def getRemoteNodes(String serverAddress,String userNameToken){
         def url = "${serverAddress}/computer/api/json?pretty=true"
         def basicAuth = 'Basic '+"${userNameToken}".getBytes('iso-8859-1').encodeBase64()
-        def jsonResponse = httpRequest customHeaders: [[name: 'Authorization', value: basicAuth]], url: url, quiet: true
+        def jsonResponse = steps.httpRequest(customHeaders: [[name: 'Authorization', value: basicAuth]], url: url, quiet: true)
         
-        def resultMap =  readJSON text: jsonResponse.content
+        def resultMap = steps.readJSON text: jsonResponse.content
         return resultMap
     }
 
     def getRemovableNodes(remoteNodes,localNodes,filePath){
         def array = []
-        for(i=0; i < remoteNodes.computer.size(); i++){
+        for(def i=0; i < remoteNodes.computer.size(); i++){
             if(remoteNodes.computer[i].offline && !remoteNodes.computer[i].temporarilyOffline){
-                shouldRemove = checkThreshold(localNodes,remoteNodes.computer[i].displayName)
-                if (shouldRemove){
-                    map = [:]
+                if (this.checkThreshold(localNodes,remoteNodes.computer[i].displayName)){
+                    def map = [:]
                     map.Name = remoteNodes.computer[i].displayName
                     map.offlineReason = remoteNodes.computer[i].offlineCauseReason
                     map.temporaryOffline = remoteNodes.computer[i].temporarilyOffline
@@ -122,7 +120,7 @@ class httpLib {
     def removeNode(String serverAddress, String userNameToken, String node){
         def url = "${serverAddress}/computer/${node}/doDelete"
         def basicAuth = 'Basic '+"${userNameToken}".getBytes('iso-8859-1').encodeBase64()
-        def jsonResponse = httpRequest customHeaders: [[name: 'Authorization', value: basicAuth]], url: url, quiet: true, httpMode: 'POST'
+        def jsonResponse = steps.httpRequest(customHeaders: [[name: 'Authorization', value: basicAuth]], url: url, quiet: true, httpMode: 'POST')
         if(jsonResponse.status != 302){
             throw("Cannot remove node: ${jsonResponse.content}")
         }
