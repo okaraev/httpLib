@@ -17,7 +17,7 @@ class httpLib implements Serializable {
         def String localJson
         def localArray
         try{
-            localJson = readFile(file: filePath, encoding: "utf8")
+            localJson = steps.readFile(file: filePath, encoding: "utf8")
         }catch(e){
             localArray = [["Node":"builtin", "Tries":0]]
             exceptionwhilereading = true
