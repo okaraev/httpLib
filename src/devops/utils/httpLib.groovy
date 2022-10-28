@@ -80,16 +80,8 @@ class httpLib implements Serializable {
                 }
             }
         }
-        try{
-            text = JsonOutput.toJson(list).toString()   
-        }catch(e){
-            println("Caught an exception on converting to json: ${e}")
-        }
-        try{
-            writeFile(text: text, file: filePath, encoding: "utf8")   
-        }catch(e){
-            println("Caught an exception: ${e}")
-        }
+        def text = JsonOutput.toJson(list).toString()
+        steps.writeFile(text: text, file: filePath, encoding: "utf8")
     }
 
     def getRemoteNodes(String serverAddress,String userNameToken){
