@@ -50,7 +50,7 @@ class httpLib implements Serializable {
                 if(remoteComp.offline && !remoteComp.temporarilyOffline){
                     if(local[a].Node == remoteComp.displayName){
                         if(local[a].Tries != 3){
-                            element = [:]
+                            def element = [:]
                             element.Node = local[a].Node
                             element.Tries = local[a].Tries+1
                             list.add(element)
